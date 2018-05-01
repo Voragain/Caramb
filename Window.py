@@ -8,6 +8,8 @@ from functools import reduce
 from pyglet.gl import *
 from HLSL import *
 
+from Vector import *
+
 class CaramboleWindow(pyglet.window.Window):
     def __init__(self):
         config = Config(sample_buffers=1, samples=4,
@@ -90,21 +92,28 @@ class CaramboleWindow(pyglet.window.Window):
         #self.cueShader = Shader(cueVertexShaderCode, cueVertexFragmentCode)
         #self.cueShader = Shader("", cueVertexFragmentCode)
         self.boules = []
-        self.start = False
-        self.started = False
+        self.hasHit = False
+        self.hitVec = None
+        self.gameActive = False
+        self.mousePos = None
         
 
     def reflectModel(self, model):
-        if self.start:
-            model.start()
-            self.start = False
+        if self.hasHit:
+            model.hitBall(self.hitVec.scale(4))
+            self.hasHit = False
+            self.hitVec = None
         self.boules = model.getBoules()
+        self.blanchePos = model.getBlanchePos()
+        self.gameActive = model.gameActive
         #print("reflectModel")
 
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.mousePos = Vector(x, y)
+
     def on_mouse_press(self, x, y, button, modifiers):
-        if self.started == False:
-            self.start = True
-            self.started = True
+        self.hasHit = True
+        self.hitVec = Vector.Substract(self.blanchePos, Vector(x,y))
 
     def on_draw(self):
         glClearColor(0.8, 0.8, 0.8, 1)
@@ -132,6 +141,15 @@ class CaramboleWindow(pyglet.window.Window):
 
         self.ballShader.unbind()
 
+        glLoadIdentity()
+
+        if not self.gameActive:
+            label = pyglet.text.Label("PLAY!", font_size = 24, x = self.width/2, y = 500, anchor_x = 'center')
+            label.draw()
+
+        if not self.gameActive and self.mousePos != None:
+            self.drawVectorAt(Vector.Substract(self.blanchePos, self.mousePos).scale(2), self.blanchePos.x, self.blanchePos.y, 2.5)
+
         # glColor4f(0,0,0,1)
         
         # v = Vector(50, 50)
@@ -140,7 +158,7 @@ class CaramboleWindow(pyglet.window.Window):
         # self.drawVectorAsLine(v.rotated90cw(), 50, 50, 15)
 
     def drawVectorAt(self, v, x, y, w):
-        (front, right) = v.get_directions()
+        (front, right) = Vector.ToNormalPerp(v)
         len = v.length()
         glBegin(GL_TRIANGLES)
         #print("Vec : " + str(front.__dict__))

@@ -1,6 +1,8 @@
 
 # -*- coding: utf-8 -*-
 
+from threading import Thread
+
 from Window import *
 from Vector import *
 
@@ -54,13 +56,35 @@ class CaramboleData:
         #self.collision(self.carambole, self.blanche)
         self.frameTime = 0
         #self.nextHit = None
+        self.gameActive = False
+        self.nextHit = self.collisionCheck()
+        self.intervalFnc = None
+
+    def ballsStopped(self):
+        print("The balls have stopped")
+        self.gameActive = False
+
+    def setIntervalFnc(self, intervalFnc):
+        self.intervalFnc = intervalFnc
+
+    def hitBall(self, velocity):
+        if self.gameActive:
+            return
+        self.blanche.velocity = velocity
+        self.frameTime = 0
+        self.gameActive = True
+        self.fixAll()
         self.nextHit = self.collisionCheck()
 
     def start(self):
         self.blanche.velocity.modify(300, 143)
         self.frameTime = 0
+        self.gameActive = True
         self.fixAll()
         self.nextHit = self.collisionCheck()
+
+    def getBlanchePos(self):
+        return self.blanche.position.copy()
 
     def makeBlanche(self):
         b = Boule("#eeeeee")
@@ -114,17 +138,28 @@ class CaramboleData:
 
     def resolveCollision(self, hit):
         print("Collision at " + str(self.frameTime) + "s")
-        if type(hit[2]) is Vector:
-            self.wallCollision(*hit[1:])
 
-        if type(hit[2]) is Boule:
-            self.collision(*hit[1:])
+        if hit[1] == 3:
+            pass
+            #self.ballsStopped()
+
+        elif hit[1] == 1:
+            self.wallCollision(*hit[2:])
+
+        elif hit[1] == 2:
+            self.collision(*hit[2:])
 
     def update(self, dt):
-        if self.nextHit != None:
-            pass #print("Update - Next Hit " + str(self.nextHit[0]) + "/" + str(self.frameTime + dt) + "s")
+        if not self.gameActive:
+            return self
+        if self.intervalFnc != None:
+            dt = self.intervalFnc(dt)
+        #dt = 500
         while dt > 0:
-            if self.nextHit != None and self.nextHit[0] <= self.frameTime + dt:
+            if self.nextHit == None:
+                self.gameActive = False
+                dt = 0
+            elif self.nextHit != None and self.nextHit[0] <= self.frameTime + dt:
                 partialDt = self.nextHit[0] - self.frameTime
                 self.frameTime += partialDt
                 if partialDt > 0:
@@ -140,31 +175,37 @@ class CaramboleData:
                 self.frameTime += dt
                 self.partialUpdate(self.frameTime)
                 dt = 0
+
         return self
 
     def collisionCheck(self):
+        if not self.gameActive:
+            return None
+
         hits = []
-        for i in range(0, len(self.boules)):
-            res = self.firstWallTouch(self.boules[i])
+        for ball in self.boules:
+            res = self.firstWallTouch(ball)
             if res != None:
                 hits.append(res)
-            
+            res = self.checkBallStop(ball)
+            if res != None:
+                hits.append(res)
+
         for i in range(0, len(self.boules)-1):
             for j in range(i+1, len(self.boules)):
                 res = self.firstTouch(self.boules[i], self.boules[j])
                 if res != None:
                     hits.append(res)
-        
+                
 
         nextHit = None
+        if len(hits) == 0:
+            return None
+
         for (time, *args) in hits:
             if nextHit == None or nextHit[0] > time:
                 nextHit = (time, *args)
 
-        if nextHit == None:
-            print("No next hit")
-        else:
-            print("Next hit in " + str(nextHit[0]) + "s")
         return nextHit
 
     def firstWallTouch(self, b1):
@@ -180,7 +221,7 @@ class CaramboleData:
                 tt = (math.sqrt(sq)-v)/-self.table_friction
                 if tt >= 0:
                     print("Right side collision in " + str(tt) + "s")
-                    wallTouch = (tt, b1, Vector(-1, 0), wallTouchPos)
+                    wallTouch = (tt, 1, b1, Vector(-1, 0), wallTouchPos)
 
         if b1.velocity.x < 0:
             wallTouchX = 100 + b1.size
@@ -194,7 +235,7 @@ class CaramboleData:
                 if tt >= 0:
                     if wallTouch == None or wallTouch[0] > tt:
                         print("Left side collision in " + str(tt) + "s at " + str(wallTouchPos))
-                        wallTouch = (tt, b1, Vector(1, 0), wallTouchPos)
+                        wallTouch = (tt, 1, b1, Vector(1, 0), wallTouchPos)
 
         if b1.velocity.y > 0:
             wallTouchY = 450 - b1.size
@@ -208,7 +249,7 @@ class CaramboleData:
                 if tt >= 0:
                     if wallTouch == None or wallTouch[0] > tt:
                         print("Top side collision in " + str(tt) + "s")
-                        wallTouch = (tt, b1, Vector(0, -1), wallTouchPos)
+                        wallTouch = (tt, 1, b1, Vector(0, -1), wallTouchPos)
 
         if b1.velocity.y < 0:
             wallTouchY = 150 + b1.size
@@ -222,7 +263,7 @@ class CaramboleData:
                 if tt >= 0:
                     if wallTouch == None or wallTouch[0] > tt:
                         print("Bottom side collision in " + str(tt) + "s")
-                        wallTouch = (tt, b1, Vector(0, 1), wallTouchPos)
+                        wallTouch = (tt, 1, b1, Vector(0, 1), wallTouchPos)
 
         return wallTouch
 
@@ -288,13 +329,13 @@ class CaramboleData:
         print("Will happen at " + str(hit_position_ball) + " | " + str(hit_position_other))
         print("With velocity " + str(collision_velocity_ball) + " | " + str(collision_velocity_other))
 
-        return (time_to_collision, b1, b2, hit_position_ball, collision_velocity_ball, hit_position_other, collision_velocity_other)
+        return (time_to_collision, 2, b1, b2, hit_position_ball, collision_velocity_ball, hit_position_other, collision_velocity_other)
 
     def checkBallStop(self, ball):
+        if ball.velocity.length() == 0:
+            return None
         time_to_stop = ball.velocity.length() / self.table_friction
-        if time_to_stop > 0:
-            return (time_to_stop, ball)
-        return None
+        return (time_to_stop, 3, ball)
 
     def relativeMovement(self, b1, b2):
         return Vector.Substract(b1.velocity, b2.velocity)
@@ -349,8 +390,25 @@ class CaramboleData:
         return map(lambda b: (b.position, b.color, b.size), self.boules)
 
 
+class GameInstance(Thread):
+    def __init__(self, intervalFnc = None):
+        Thread.__init__(self)
+        cd = CaramboleData()
+        cd.setIntervalFnc(intervalFnc)
+        cw = CaramboleWindow()
+
+    def run(self):
+        pyglet.clock.schedule_interval(lambda dt: cw.reflectModel(cd.update(dt)), 1/120.0)
+        pyglet.app.run()
+
+
+# th1 = GameInstance()
+
+# th1.start()
+
+# th1.join()
+
 cd = CaramboleData()
 cw = CaramboleWindow()
-
 pyglet.clock.schedule_interval(lambda dt: cw.reflectModel(cd.update(dt)), 1/120.0)
 pyglet.app.run()
