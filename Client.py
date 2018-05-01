@@ -408,7 +408,11 @@ class GameInstance(Thread):
 
 # th1.join()
 
-cd = CaramboleData()
-cw = CaramboleWindow()
-pyglet.clock.schedule_interval(lambda dt: cw.reflectModel(cd.update(dt), dt), 1/120.0)
-pyglet.app.run()
+def launch():
+    cd = CaramboleData()
+    cw = CaramboleWindow()
+    pyglet.clock.schedule_interval(lambda dt: cw.reflectModel(cd.update(dt), dt), 1/120.0)
+    pyglet.app.run()
+
+if __name__ == "__main__":
+    launch()
