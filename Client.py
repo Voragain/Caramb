@@ -61,7 +61,7 @@ class CaramboleData:
         self.intervalFnc = None
 
     def ballsStopped(self):
-        print("The balls have stopped")
+        #print("The balls have stopped")
         self.gameActive = False
 
     def setIntervalFnc(self, intervalFnc):
@@ -137,7 +137,7 @@ class CaramboleData:
             self.fixState(ball)
 
     def resolveCollision(self, hit):
-        print("Collision at " + str(self.frameTime) + "s")
+        #print("Collision at " + str(self.frameTime) + "s")
 
         if hit[1] == 3:
             pass
@@ -220,7 +220,7 @@ class CaramboleData:
             if sq >= 0:
                 tt = (math.sqrt(sq)-v)/-self.table_friction
                 if tt >= 0:
-                    print("Right side collision in " + str(tt) + "s")
+                    #print("Right side collision in " + str(tt) + "s")
                     wallTouch = (tt, 1, b1, Vector(-1, 0), wallTouchPos)
 
         if b1.velocity.x < 0:
@@ -234,7 +234,7 @@ class CaramboleData:
                 tt = (math.sqrt(sq)-v)/-self.table_friction
                 if tt >= 0:
                     if wallTouch == None or wallTouch[0] > tt:
-                        print("Left side collision in " + str(tt) + "s at " + str(wallTouchPos))
+                        #print("Left side collision in " + str(tt) + "s at " + str(wallTouchPos))
                         wallTouch = (tt, 1, b1, Vector(1, 0), wallTouchPos)
 
         if b1.velocity.y > 0:
@@ -248,7 +248,7 @@ class CaramboleData:
                 tt = (math.sqrt(sq)-v)/-self.table_friction
                 if tt >= 0:
                     if wallTouch == None or wallTouch[0] > tt:
-                        print("Top side collision in " + str(tt) + "s")
+                        #print("Top side collision in " + str(tt) + "s")
                         wallTouch = (tt, 1, b1, Vector(0, -1), wallTouchPos)
 
         if b1.velocity.y < 0:
@@ -262,7 +262,7 @@ class CaramboleData:
                 tt = (math.sqrt(sq)-v)/-self.table_friction
                 if tt >= 0:
                     if wallTouch == None or wallTouch[0] > tt:
-                        print("Bottom side collision in " + str(tt) + "s")
+                        #print("Bottom side collision in " + str(tt) + "s")
                         wallTouch = (tt, 1, b1, Vector(0, 1), wallTouchPos)
 
         return wallTouch
@@ -299,7 +299,7 @@ class CaramboleData:
         a = math.sqrt(pyth)
         rl = l - a
 
-        print("RL : " + str(rl))
+        #print("RL : " + str(rl))
 
         v = rm.length()
         tt = 2 * ac * rl + v*v
@@ -325,9 +325,9 @@ class CaramboleData:
         average_velocity_other = Vector.Add(b2.velocity, collision_velocity_other).scale(0.5)
         hit_position_other = Vector.Add(b2.position, average_velocity_other.scale(timeToHit))
 
-        print("Found future collision in " + str(time_to_collision) + "s")
-        print("Will happen at " + str(hit_position_ball) + " | " + str(hit_position_other))
-        print("With velocity " + str(collision_velocity_ball) + " | " + str(collision_velocity_other))
+        #print("Found future collision in " + str(time_to_collision) + "s")
+        #print("Will happen at " + str(hit_position_ball) + " | " + str(hit_position_other))
+        #print("With velocity " + str(collision_velocity_ball) + " | " + str(collision_velocity_other))
 
         return (time_to_collision, 2, b1, b2, hit_position_ball, collision_velocity_ball, hit_position_other, collision_velocity_other)
 
@@ -341,8 +341,8 @@ class CaramboleData:
         return Vector.Substract(b1.velocity, b2.velocity)
 
     def collision(self, b1, b2, p1, v1, p2, v2):
-        print("Adjusting " + str(b1.position) + " => " + str(p1))
-        print("Adjusting " + str(b2.position) + " => " + str(p2))
+        #print("Adjusting " + str(b1.position) + " => " + str(p1))
+        #print("Adjusting " + str(b2.position) + " => " + str(p2))
         b1.position = p1
         b1.velocity = v1
         b2.position = p2
@@ -372,7 +372,7 @@ class CaramboleData:
         #print("B2 : " + str(b2.position) + " -> " + str(b2.velocity))
 
     def wallCollision(self, b1, w, p):
-        print("Adjusting for wall " + str(b1.position) + " => " + str(p))
+        #print("Adjusting for wall " + str(b1.position) + " => " + str(p))
         b1.position = p
         (normal, perp) = Vector.ToNormalPerp(w)
         #print("Normal : " + str(normal))
@@ -410,5 +410,5 @@ class GameInstance(Thread):
 
 cd = CaramboleData()
 cw = CaramboleWindow()
-pyglet.clock.schedule_interval(lambda dt: cw.reflectModel(cd.update(dt)), 1/120.0)
+pyglet.clock.schedule_interval(lambda dt: cw.reflectModel(cd.update(dt), dt), 1/120.0)
 pyglet.app.run()

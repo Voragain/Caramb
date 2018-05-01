@@ -29,7 +29,7 @@ class CaramboleWindow(pyglet.window.Window):
         )
 
         self.cue = pyglet.graphics.vertex_list(4,
-            ('v2f', (0, 0, 100, -2, 0, 5, 100, 7)),
+            ('v2f', (0, -2, 100, -2.5, 0, 2, 100, 2.5)),
             ('c3f', (0, 0, 0) * 4),
             ('0t2f', (0, 0, 0, 0, 1, 0, 1, 0))
         )
@@ -39,7 +39,7 @@ class CaramboleWindow(pyglet.window.Window):
             uniform vec3 color;
             uniform vec2 center;
             uniform float size;
-            uniform vec3 lightPosition = vec3(300, 200, 300);
+            uniform vec3 lightPosition = vec3(300, 200, 600);
             uniform vec3 lightDiffuseColor = vec3(1.0, 1.0, 1.0);
             uniform vec3 lightSpecularColor = vec3(1.0, 1.0, 1.0);
 
@@ -52,7 +52,8 @@ class CaramboleWindow(pyglet.window.Window):
 
                 vec3 lightRay = normalize(lightPosition - pos);
                 float light = abs(dot(lightRay, normal));
-                float spec = max(0, light - 0.9) * 20.0;
+                float spec = max(0, light - 0.9) * 15.0;
+                spec = spec * spec;
 
                 //gl_FragColor = vec4(z, z, z, 1.0);
 
@@ -96,25 +97,39 @@ class CaramboleWindow(pyglet.window.Window):
         self.hitVec = None
         self.gameActive = False
         self.mousePos = None
+        self.hitForce = 0
+        self.pressed = False
         
 
-    def reflectModel(self, model):
-        if self.hasHit:
-            model.hitBall(self.hitVec.scale(4))
-            self.hasHit = False
-            self.hitVec = None
+    def reflectModel(self, model, dt):
         self.boules = model.getBoules()
         self.blanchePos = model.getBlanchePos()
         self.gameActive = model.gameActive
+        if self.pressed:
+            self.hitForce += dt
+
+        if self.hasHit:
+            if self.hitForce > 0:
+                self.hitForce = max(0, self.hitForce - dt * 40)
+            if self.hitForce == 0:
+                model.hitBall(self.hitVec.scale(4))
+                self.hasHit = False
+                self.hitVec = None
+                
         #print("reflectModel")
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.mousePos = Vector(x, y)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        self.hasHit = True
-        self.hitVec = Vector.Substract(self.blanchePos, Vector(x,y))
+        self.pressed = True
 
+    def on_mouse_release(self, x, y, button, modifiers):
+        self.pressed = False
+        self.hasHit = True
+        scale = min(self.hitForce * self.hitForce * 40, 250)
+        self.hitVec = Vector.Substract(self.blanchePos, Vector(x,y)).normalize().scale(scale)
+        
     def on_draw(self):
         glClearColor(0.8, 0.8, 0.8, 1)
         self.clear()
@@ -148,7 +163,17 @@ class CaramboleWindow(pyglet.window.Window):
             label.draw()
 
         if not self.gameActive and self.mousePos != None:
-            self.drawVectorAt(Vector.Substract(self.blanchePos, self.mousePos).scale(2), self.blanchePos.x, self.blanchePos.y, 2.5)
+            glTranslatef(self.blanchePos.x, self.blanchePos.y, 0)
+            glRotatef(Vector.Substract(self.mousePos, self.blanchePos).angle_deg(), 0, 0, 1.0)
+            scale = min(self.hitForce * self.hitForce * 40, 250)
+            scale = scale / 3.0
+            glTranslatef(7 + scale, 0, 0)
+
+            self.cue.draw(GL_TRIANGLE_STRIP)
+
+            #self.drawVectorAt(Vector.Substract(self.blanchePos, self.mousePos).scale(2), self.blanchePos.x, self.blanchePos.y, 2.5)
+
+        glLoadIdentity()
 
         # glColor4f(0,0,0,1)
         

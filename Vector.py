@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 
-from math import pi, cos, sin, sqrt
+from math import pi, cos, sin, sqrt, atan2
 
 class Vector:
     def __init__(self, x = 0, y = 0):
@@ -61,6 +61,12 @@ class Vector:
     def rotate_deg(self, angle):
         self.rotate(angle / 180.0 * pi)
         return self
+
+    def angle(self):
+        return atan2(self.y, self.x)
+
+    def angle_deg(self):
+        return self.angle() / pi * 180.0
 
     def __str__(self):
         return "V2(" + str(self.x) + ", " + str(self.y) + ")"
