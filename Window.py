@@ -144,7 +144,7 @@ class CaramboleWindow(pyglet.window.Window):
         glLoadIdentity()
 
         if not self.gameActive:
-            label = pyglet.text.Label("PLAY!", font_size = 24, x = self.width/2, y = 500, anchor_x = 'center')
+            label = pyglet.text.Label("PLAY!", font_size = 24, x = self.width/2, y = 500, anchor_x = 'center', color = (0, 0, 0, 255))
             label.draw()
 
         if not self.gameActive and self.mousePos != None:
